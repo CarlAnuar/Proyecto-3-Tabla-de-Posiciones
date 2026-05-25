@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Herencia en C++ — TC1030</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #f78166;
+    --accent3: #56d364;
+    --accent4: #e3b341;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --purple: #bc8cff;
+    --teal: #39d353;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ── SLIDE ENGINE ── */
+  .deck { width: 100%; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 48px 64px;
+    opacity: 0;
+    transition: opacity .4s;
+  }
+  .slide.active { display: flex; opacity: 1; }
+
+  /* ── NAV ── */
+  .nav {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: rgba(22,27,34,.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 24px;
+    z-index: 100;
+  }
+  .nav button {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: .9rem;
+    transition: background .2s;
+  }
+  .nav button:hover { background: var(--accent); color: #000; }
+  .nav button:disabled { opacity: .3; cursor: default; }
+  #counter { color: var(--muted); font-size: .85rem; min-width: 64px; text-align: center; }
+
+  /* ── PROGRESS ── */
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--purple));
+    transition: width .4s;
+    z-index: 200;
+  }
+
+  /* ── SLIDE STYLES ── */
+  .slide-title {
+    background: radial-gradient(ellipse at 30% 40%, #1a2744 0%, #0d1117 70%);
+  }
+
+  h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 2rem; font-weight: 700; margin-bottom: 24px; }
+  h3 { font-size: 1.3rem; font-weight: 600; margin-bottom: 12px; }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .badge-blue  { background: #1f3a5f; color: var(--accent); border: 1px solid var(--accent); }
+  .badge-green { background: #1a3a2a; color: var(--accent3); border: 1px solid var(--accent3); }
+  .badge-red   { background: #3a1f1f; color: var(--accent2); border: 1px solid var(--accent2); }
+  .badge-gold  { background: #3a2e0a; color: var(--accent4); border: 1px solid var(--accent4); }
+  .badge-purple{ background: #2a1f3a; color: var(--purple);  border: 1px solid var(--purple); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+
+  pre, code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Courier New', monospace;
+  }
+  pre {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-size: .82rem;
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+  .kw  { color: #ff7b72; }
+  .tp  { color: #ffa657; }
+  .fn  { color: #d2a8ff; }
+  .st  { color: #a5d6ff; }
+  .cm  { color: #6e7681; font-style: italic; }
+  .nu  { color: #79c0ff; }
+  .op  { color: #ff7b72; }
+
+  .tree {
+    font-family: 'Cascadia Code','Fira Code',monospace;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text);
+  }
+  .tree .node-base  { color: var(--accent); font-weight: 700; }
+  .tree .node-child { color: var(--accent3); font-weight: 600; }
+  .tree .node-grand { color: var(--purple); }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+  }
+  .comparison-table th {
+    background: var(--surface2);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+  }
+  .comparison-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comparison-table tr:hover td { background: var(--surface2); }
+
+  .highlight-box {
+    border-left: 4px solid var(--accent);
+    background: var(--surface);
+    padding: 14px 20px;
+    border-radius: 0 8px 8px 0;
+    font-size: .95rem;
+  }
+
+  .pill-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: .85rem;
+  }
+
+  /* Diagrama UML estilo SVG-in-CSS */
+  .uml-box {
+    border: 2px solid var(--accent);
+    border-radius: 8px;
+    text-align: center;
+    overflow: hidden;
+    min-width: 180px;
+  }
+  .uml-header {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    padding: 6px 12px;
+    font-size: .9rem;
+  }
+  .uml-section {
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: .78rem;
+    line-height: 1.7;
+    font-family: 'Cascadia Code','Fira Code',monospace;
+  }
+  .uml-child  { border-color: var(--accent3); }
+  .uml-child .uml-header  { background: var(--accent3); }
+  .uml-child2 { border-color: var(--purple); }
+  .uml-child2 .uml-header { background: var(--purple); }
+  .uml-child3 { border-color: var(--accent4); }
+  .uml-child3 .uml-header { background: var(--accent4); color: #000; }
+
+  .arrow-down {
+    text-align: center;
+    font-size: 1.4rem;
+    color: var(--muted);
+    line-height: 1;
+    margin: 2px 0;
+  }
+  .arrow-branch {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 32px;
+  }
+  .arrow-branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .metaphor-icon { font-size: 3.5rem; margin-bottom: 8px; }
+
+  .step-list { counter-reset: steps; list-style: none; }
+  .step-list li {
+    counter-increment: steps;
+    padding: 10px 16px 10px 52px;
+    position: relative;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-list li::before {
+    content: counter(steps);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    color: #000;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .8rem;
+  }
+
+  .tag { color: var(--accent4); }
+  .acc-public    { color: var(--accent3); }
+  .acc-protected { color: var(--accent4); }
+  .acc-private   { color: var(--accent2); }
+
+  /* Slide-specific */
+  .slide-cover-sub { color: var(--muted); margin-top: 16px; font-size: 1.1rem; }
+
+  .industry-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+
+  .task-section {
+    border-left: 4px solid var(--accent4);
+    background: rgba(58,46,10,.3);
+    padding: 14px 20px;
+    border-radius: 0 8px 8px 0;
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 1 — PORTADA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide slide-title active" id="s1">
+  <div style="text-align:center; max-width:800px">
+    <div class="badge badge-blue" style="margin-bottom:20px">TC1030 · Programación Orientada a Objetos</div>
+    <h1 style="background:linear-gradient(135deg,#58a6ff,#bc8cff,#56d364);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px">
+      Herencia en C++
+    </h1>
+    <p class="slide-cover-sub">Reutiliza, extiende, especializa — el principio detrás de todo framework moderno</p>
+    <div style="margin-top:40px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <span class="badge badge-green">Deitel Cap. 11</span>
+      <span class="badge badge-purple">GeeksforGeeks</span>
+      <span class="badge badge-gold">Industria Real</span>
+    </div>
+    <div style="margin-top:48px;font-size:3rem">📦 ✉️ 🚚</div>
+    <p style="color:var(--muted);margin-top:16px;font-size:.85rem">← → para navegar · Flechas del teclado también funcionan</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 2 — AGENDA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <h2>¿Qué vamos a aprender hoy?</h2>
+  <div class="grid-2" style="max-width:900px">
+    <div class="card" style="border-color:var(--accent)">
+      <h3 style="color:var(--accent)">📚 Conceptos</h3>
+      <ul style="list-style:none;line-height:2.2;color:var(--muted)">
+        <li>→ ¿Qué es la herencia?</li>
+        <li>→ Clase base vs. clase derivada</li>
+        <li>→ Especificadores de acceso</li>
+        <li>→ Tipos de herencia</li>
+        <li>→ Constructores y destructores</li>
+        <li>→ Sobreescritura de funciones</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--accent3)">
+      <h3 style="color:var(--accent3)">🏭 Práctica</h3>
+      <ul style="list-style:none;line-height:2.2;color:var(--muted)">
+        <li>→ Metáforas del mundo real</li>
+        <li>→ Herencia en la industria</li>
+        <li>→ Ejemplos de código C++</li>
+        <li>→ Polimorfismo básico</li>
+        <li>→ Tarea: Sistema de Envíos</li>
+        <li>→ Tips para el código</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 3 — METÁFORA: ADN
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-purple" style="margin-bottom:16px">Metáfora</div>
+    <h2>La herencia es como el ADN</h2>
+    <div class="grid-2">
+      <div>
+        <div class="card" style="text-align:center;padding:32px">
+          <div style="font-size:5rem">🧬</div>
+          <p style="color:var(--muted);margin-top:16px;font-size:1.05rem">
+            Un hijo <strong style="color:var(--text)">hereda</strong> características de sus padres:<br>color de ojos, altura, tipo de sangre…<br><br>
+            Pero también tiene sus <strong style="color:var(--accent3)">propias características</strong> que lo hacen único.
+          </p>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="text-align:center;padding:32px">
+          <div style="font-size:5rem">🖥️</div>
+          <p style="color:var(--muted);margin-top:16px;font-size:1.05rem">
+            Una clase derivada <strong style="color:var(--text)">hereda</strong> atributos y métodos de la clase base.<br><br>
+            Puede <strong style="color:var(--accent3)">extenderlos</strong> y <strong style="color:var(--accent4)">especializarlos</strong> sin reescribir lo que ya existe.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="highlight-box" style="margin-top:20px">
+      💡 <strong>Principio clave:</strong> La herencia modela una relación <strong style="color:var(--accent)">"ES UN"</strong> — un Perro <em>es un</em> Animal, un Auto <em>es un</em> Vehículo, un Paquete <em>es un</em> Envío.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 4 — ¿POR QUÉ HERENCIA?
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-red" style="margin-bottom:16px">El problema</div>
+    <h2>Sin herencia: código duplicado</h2>
+    <div class="grid-2">
+      <div>
+        <p style="color:var(--accent2);font-weight:600;margin-bottom:8px">❌ Sin herencia</p>
+        <pre><span class="kw">class</span> <span class="tp">Perro</span> {
+  <span class="kw">string</span> nombre;
+  <span class="kw">int</span>    edad;
+  <span class="kw">void</span>   <span class="fn">comer</span>();
+  <span class="kw">void</span>   <span class="fn">dormir</span>();
+  <span class="kw">void</span>   <span class="fn">ladrar</span>();
+};
+
+<span class="kw">class</span> <span class="tp">Gato</span> {
+  <span class="kw">string</span> nombre;  <span class="cm">// duplicado</span>
+  <span class="kw">int</span>    edad;    <span class="cm">// duplicado</span>
+  <span class="kw">void</span>   <span class="fn">comer</span>();  <span class="cm">// duplicado</span>
+  <span class="kw">void</span>   <span class="fn">dormir</span>(); <span class="cm">// duplicado</span>
+  <span class="kw">void</span>   <span class="fn">maullar</span>();
+};</pre>
+      </div>
+      <div>
+        <p style="color:var(--accent3);font-weight:600;margin-bottom:8px">✅ Con herencia</p>
+        <pre><span class="kw">class</span> <span class="tp">Animal</span> {           <span class="cm">// base</span>
+  <span class="kw">string</span> nombre;
+  <span class="kw">int</span>    edad;
+  <span class="kw">void</span>   <span class="fn">comer</span>();
+  <span class="kw">void</span>   <span class="fn">dormir</span>();
+};
+
+<span class="kw">class</span> <span class="tp">Perro</span> : <span class="kw">public</span> <span class="tp">Animal</span> {
+  <span class="kw">void</span> <span class="fn">ladrar</span>();   <span class="cm">// solo lo nuevo</span>
+};
+
+<span class="kw">class</span> <span class="tp">Gato</span> : <span class="kw">public</span> <span class="tp">Animal</span> {
+  <span class="kw">void</span> <span class="fn">maullar</span>();  <span class="cm">// solo lo nuevo</span>
+};</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 5 — SINTAXIS BASE
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div style="max-width:860px;width:100%">
+    <div class="badge badge-blue" style="margin-bottom:16px">Sintaxis</div>
+    <h2>Cómo se declara la herencia</h2>
+    <pre style="font-size:.9rem"><span class="cm">// ┌── Clase derivada    ┌── Tipo de acceso   ┌── Clase base</span>
+<span class="kw">class</span> <span class="tp">ClaseHija</span>     :    <span class="kw">public</span>           <span class="tp">ClaseBase</span>
+{
+    <span class="cm">// Nuevos atributos y métodos específicos de ClaseHija</span>
+};</pre>
+    <div class="grid-3" style="margin-top:20px">
+      <div class="card" style="border-color:var(--accent3)">
+        <div style="color:var(--accent3);font-weight:700;font-size:1.1rem;margin-bottom:8px"><code>public</code></div>
+        <p style="font-size:.85rem;color:var(--muted)">Los miembros <code>public</code> y <code>protected</code> de la base mantienen su acceso. <strong style="color:var(--text)">El más común.</strong></p>
+      </div>
+      <div class="card" style="border-color:var(--accent4)">
+        <div style="color:var(--accent4);font-weight:700;font-size:1.1rem;margin-bottom:8px"><code>protected</code></div>
+        <p style="font-size:.85rem;color:var(--muted)">Los miembros <code>public</code> de la base se vuelven <code>protected</code> en la derivada.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent2)">
+        <div style="color:var(--accent2);font-weight:700;font-size:1.1rem;margin-bottom:8px"><code>private</code></div>
+        <p style="font-size:.85rem;color:var(--muted)">Todo lo heredado se vuelve <code>private</code>. Útil para implementación interna.</p>
+      </div>
+    </div>
+    <div class="highlight-box" style="margin-top:20px">
+      💡 Para la tarea y la mayoría de proyectos reales: usa siempre <code style="color:var(--accent3)">public</code>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 6 — ESPECIFICADORES DE ACCESO
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div style="max-width:860px;width:100%">
+    <div class="badge badge-gold" style="margin-bottom:16px">Acceso</div>
+    <h2>¿Qué puede ver quién?</h2>
+    <div style="display:flex;gap:20px;margin-bottom:20px">
+      <div class="card" style="flex:1;text-align:center">
+        <div style="font-size:2.5rem">🌍</div>
+        <code class="acc-public" style="font-size:1.1rem;font-weight:700">public</code>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:8px">Todos lo ven:<br>clase base, derivada y código externo</p>
+      </div>
+      <div class="card" style="flex:1;text-align:center">
+        <div style="font-size:2.5rem">👨‍👧</div>
+        <code class="acc-protected" style="font-size:1.1rem;font-weight:700">protected</code>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:8px">Solo la familia:<br>clase base y sus derivadas</p>
+      </div>
+      <div class="card" style="flex:1;text-align:center">
+        <div style="font-size:2.5rem">🔒</div>
+        <code class="acc-private" style="font-size:1.1rem;font-weight:700">private</code>
+        <p style="font-size:.8rem;color:var(--muted);margin-top:8px">Solo la clase dueña.<br>Las derivadas <strong>no tienen acceso directo</strong></p>
+      </div>
+    </div>
+    <table class="comparison-table">
+      <tr>
+        <th>Miembro en Base</th>
+        <th>Herencia <code>public</code></th>
+        <th>Herencia <code>protected</code></th>
+        <th>Herencia <code>private</code></th>
+      </tr>
+      <tr>
+        <td><code class="acc-public">public</code></td>
+        <td><code class="acc-public">public</code></td>
+        <td><code class="acc-protected">protected</code></td>
+        <td><code class="acc-private">private</code></td>
+      </tr>
+      <tr>
+        <td><code class="acc-protected">protected</code></td>
+        <td><code class="acc-protected">protected</code></td>
+        <td><code class="acc-protected">protected</code></td>
+        <td><code class="acc-private">private</code></td>
+      </tr>
+      <tr>
+        <td><code class="acc-private">private</code></td>
+        <td>❌ No accesible</td>
+        <td>❌ No accesible</td>
+        <td>❌ No accesible</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 7 — DIAGRAMA UML GENERAL
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s7">
+  <div style="max-width:860px;width:100%;text-align:center">
+    <div class="badge badge-purple" style="margin-bottom:16px">UML</div>
+    <h2>Representación visual</h2>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:16px">
+      <!-- Clase base -->
+      <div class="uml-box" style="width:240px">
+        <div class="uml-header">Animal</div>
+        <div class="uml-section">
+          <span class="acc-protected">─ nombre : string</span><br>
+          <span class="acc-protected">─ edad : int</span>
+        </div>
+        <div class="uml-section">
+          <span class="acc-public">+ comer() : void</span><br>
+          <span class="acc-public">+ dormir() : void</span><br>
+          <span class="acc-public">+ sonido() : void</span>
+        </div>
+      </div>
+      <!-- Flechas -->
+      <div style="display:flex;gap:80px;align-items:flex-start">
+        <div class="arrow-branch-col">
+          <div class="arrow-down">△</div>
+          <div class="uml-box uml-child" style="width:210px">
+            <div class="uml-header">Perro</div>
+            <div class="uml-section">
+              <span class="acc-private">─ raza : string</span>
+            </div>
+            <div class="uml-section">
+              <span class="acc-public">+ ladrar() : void</span><br>
+              <span class="acc-public">+ sonido() : void</span>
+            </div>
+          </div>
+        </div>
+        <div class="arrow-branch-col">
+          <div class="arrow-down">△</div>
+          <div class="uml-box uml-child2" style="width:210px">
+            <div class="uml-header">Gato</div>
+            <div class="uml-section">
+              <span class="acc-private">─ indoor : bool</span>
+            </div>
+            <div class="uml-section">
+              <span class="acc-public">+ maullar() : void</span><br>
+              <span class="acc-public">+ sonido() : void</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:16px">△ = flecha de herencia (apunta a la clase base) | ─ = atributos | + = público | # = protegido | − = privado</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 8 — CONSTRUCTORES EN HERENCIA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s8">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-blue" style="margin-bottom:16px">Constructores</div>
+    <h2>Orden de ejecución y lista de inicialización</h2>
+    <div class="grid-2">
+      <div>
+        <pre><span class="kw">class</span> <span class="tp">Animal</span> {
+<span class="kw">protected</span>:
+    <span class="kw">string</span> nombre;
+    <span class="kw">int</span>    edad;
+<span class="kw">public</span>:
+    <span class="tp">Animal</span>(<span class="kw">string</span> n, <span class="kw">int</span> e)
+        : nombre(n), edad(e) {}
+};
+
+<span class="kw">class</span> <span class="tp">Perro</span> : <span class="kw">public</span> <span class="tp">Animal</span> {
+<span class="kw">private</span>:
+    <span class="kw">string</span> raza;
+<span class="kw">public</span>:
+    <span class="tp">Perro</span>(<span class="kw">string</span> n, <span class="kw">int</span> e, <span class="kw">string</span> r)
+        : <span class="fn">Animal</span>(n, e),  <span class="cm">// ① llama al padre</span>
+          raza(r) {}      <span class="cm">// ② inicializa lo propio</span>
+};</pre>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <h3 style="color:var(--accent4)">Orden garantizado</h3>
+          <ol class="step-list">
+            <li>Constructor de la clase <strong>base</strong></li>
+            <li>Constructor de la clase <strong>derivada</strong></li>
+            <li>Destructores en orden <strong>inverso</strong></li>
+          </ol>
+        </div>
+        <div class="highlight-box">
+          💡 Usa <code>: Base(args)</code> en la lista de inicialización — es la única forma de pasar parámetros al constructor del padre.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 9 — TIPOS DE HERENCIA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s9">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-green" style="margin-bottom:16px">Tipos</div>
+    <h2>Tipos de herencia en C++</h2>
+    <div class="grid-3" style="font-size:.85rem">
+      <div class="card" style="border-color:var(--accent)">
+        <div style="text-align:center;font-size:1.8rem;margin-bottom:6px">A → B</div>
+        <div style="color:var(--accent);font-weight:700;margin-bottom:6px">Simple</div>
+        <p style="color:var(--muted)">Una derivada hereda de una sola base. El más común y sencillo.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent3)">
+        <div style="text-align:center;font-size:1.4rem;margin-bottom:6px">A → C ← B</div>
+        <div style="color:var(--accent3);font-weight:700;margin-bottom:6px">Múltiple</div>
+        <p style="color:var(--muted)">Una clase hereda de dos o más bases. Cuidado con el diamante.</p>
+      </div>
+      <div class="card" style="border-color:var(--purple)">
+        <div style="text-align:center;font-size:1.4rem;margin-bottom:6px">A → B → C</div>
+        <div style="color:var(--purple);font-weight:700;margin-bottom:6px">Multinivel</div>
+        <p style="color:var(--muted)">Cadena de herencia: nieto hereda de hijo que hereda de abuelo.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent4)">
+        <div style="text-align:center;font-size:1.4rem;margin-bottom:6px">A → B, A → C</div>
+        <div style="color:var(--accent4);font-weight:700;margin-bottom:6px">Jerárquica</div>
+        <p style="color:var(--muted)">Múltiples clases derivan de una sola base. <strong style="color:var(--text)">Usada en la tarea.</strong></p>
+      </div>
+      <div class="card" style="border-color:var(--accent2)">
+        <div style="text-align:center;font-size:1.4rem;margin-bottom:6px">A → B ← C ← A</div>
+        <div style="color:var(--accent2);font-weight:700;margin-bottom:6px">Híbrida</div>
+        <p style="color:var(--muted)">Mezcla de tipos anteriores. Usa <code>virtual</code> para evitar ambigüedad.</p>
+      </div>
+      <div class="card" style="background:rgba(88,166,255,.08);border-color:var(--accent)">
+        <div style="text-align:center;font-size:2rem;margin-bottom:8px">⭐</div>
+        <div style="color:var(--accent);font-weight:700;margin-bottom:6px">En la tarea</div>
+        <p style="color:var(--muted)">Envio → Paquete<br>Envio → Sobre<br>= <strong style="color:var(--text)">Jerárquica</strong></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 10 — SOBREESCRITURA DE FUNCIONES
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s10">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-purple" style="margin-bottom:16px">Sobreescritura</div>
+    <h2>Redefinir comportamiento</h2>
+    <div class="grid-2">
+      <div>
+        <pre><span class="kw">class</span> <span class="tp">Envio</span> {
+<span class="kw">public</span>:
+    <span class="kw">virtual</span> <span class="kw">double</span> <span class="fn">calculaCosto</span>() {
+        <span class="kw">return</span> costoEstandar;
+    }
+};
+
+<span class="kw">class</span> <span class="tp">Paquete</span> : <span class="kw">public</span> <span class="tp">Envio</span> {
+<span class="kw">public</span>:
+    <span class="kw">double</span> <span class="fn">calculaCosto</span>() <span class="kw">override</span> {
+        <span class="cm">// peso * costoPorKg + costoBase</span>
+        <span class="kw">return</span> <span class="tp">Envio</span>::<span class="fn">calculaCosto</span>()
+             + peso * costoPorKg;
+    }
+};</pre>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <h3 style="color:var(--accent3)">Palabras clave importantes</h3>
+          <table style="width:100%;font-size:.85rem;border-collapse:collapse">
+            <tr><td style="padding:6px 0;color:var(--accent)"><code>virtual</code></td><td style="color:var(--muted)">En la base: habilita polimorfismo en runtime</td></tr>
+            <tr><td style="padding:6px 0;color:var(--accent3)"><code>override</code></td><td style="color:var(--muted)">En la derivada: el compilador verifica que sí existe en la base</td></tr>
+            <tr><td style="padding:6px 0;color:var(--accent4)"><code>Base::fn()</code></td><td style="color:var(--muted)">Llama a la versión del padre dentro del hijo</td></tr>
+          </table>
+        </div>
+        <div class="highlight-box">
+          💡 <code>override</code> es tu mejor amigo: si cambias el nombre en la base, el compilador te avisa en lugar de crear silenciosamente una función nueva.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 11 — HERENCIA EN LA INDUSTRIA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-gold" style="margin-bottom:16px">Industria Real</div>
+    <h2>¿Dónde se usa herencia en producción?</h2>
+    <div class="grid-2">
+      <div class="card" style="border-color:var(--accent)">
+        <div class="industry-logo" style="margin-bottom:12px">🎮 <span style="color:var(--accent)">Motores de videojuegos</span></div>
+        <p style="color:var(--muted);font-size:.88rem">Unreal Engine / Unity: <code>Actor → Pawn → Character → MyPlayer</code>. Todo personaje hereda física, colisión e input del engine y solo especializa su comportamiento.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent3)">
+        <div class="industry-logo" style="margin-bottom:12px">🖼️ <span style="color:var(--accent3)">Frameworks UI</span></div>
+        <p style="color:var(--muted);font-size:.88rem">Qt: <code>QObject → QWidget → QPushButton</code>. Un puntero <code>QWidget*</code> puede apuntar a cualquier componente visual y llamar <code>render()</code> polimórficamente.</p>
+      </div>
+      <div class="card" style="border-color:var(--purple)">
+        <div class="industry-logo" style="margin-bottom:12px">☁️ <span style="color:var(--purple)">Cloud / APIs REST</span></div>
+        <p style="color:var(--muted);font-size:.88rem">SDKs como AWS: <code>BaseClient → S3Client</code>, <code>BaseClient → DynamoClient</code>. Autenticación, retry y logging viven en la base; cada servicio solo implementa sus endpoints.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent4)">
+        <div class="industry-logo" style="margin-bottom:12px">📦 <span style="color:var(--accent4)">Sistemas de envío</span></div>
+        <p style="color:var(--muted);font-size:.88rem">FedEx, UPS, DHL internamente modelan exactamente lo de la tarea: <code>Shipment</code> base con costo estándar, derivadas <code>Envelope</code>, <code>Package</code>, <code>Freight</code> con reglas propias.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 12 — TAREA: JERARQUÍA DE ENVÍOS
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s12">
+  <div style="max-width:900px;width:100%;text-align:center">
+    <div class="badge badge-gold" style="margin-bottom:16px">Tu Tarea</div>
+    <h2>Jerarquía de Envíos — Visión General</h2>
+
+    <!-- UML de la tarea -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:12px">
+      <div class="uml-box" style="width:340px">
+        <div class="uml-header">Envio  (clase base)</div>
+        <div class="uml-section">
+          <span class="acc-protected"># nombreRem, dirRem, ciudadRem</span><br>
+          <span class="acc-protected"># nombreDest, dirDest, ciudadDest</span><br>
+          <span class="acc-protected"># costoEstandar : double</span>
+        </div>
+        <div class="uml-section">
+          <span class="acc-public">+ Envio(…)</span><br>
+          <span class="acc-public">+ calculaCosto() : double</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:60px;align-items:flex-start">
+        <div class="arrow-branch-col">
+          <div class="arrow-down">△</div>
+          <div class="uml-box uml-child" style="width:260px">
+            <div class="uml-header">Paquete</div>
+            <div class="uml-section">
+              <span class="acc-private">─ largo, ancho, profundidad</span><br>
+              <span class="acc-private">─ peso : double</span><br>
+              <span class="acc-private">─ costoPorKg : double</span>
+            </div>
+            <div class="uml-section">
+              <span class="acc-public">+ calculaCosto() : double</span><br>
+              <span style="color:var(--muted);font-size:.75rem">costoEstandar + peso × costoPorKg</span>
+            </div>
+          </div>
+        </div>
+        <div class="arrow-branch-col">
+          <div class="arrow-down">△</div>
+          <div class="uml-box uml-child3" style="width:260px">
+            <div class="uml-header">Sobre</div>
+            <div class="uml-section">
+              <span class="acc-private">─ largo, ancho : double</span><br>
+              <span class="acc-private">─ cargoAdicional : double</span>
+            </div>
+            <div class="uml-section">
+              <span class="acc-public">+ calculaCosto() : double</span><br>
+              <span style="color:var(--muted);font-size:.75rem">si &gt; 25×30 cm → + cargoAdicional</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 13 — CÓDIGO: CLASE ENVIO
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s13">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-blue" style="margin-bottom:14px">Código — Clase Base</div>
+    <h2>Envio.h — La clase base</h2>
+    <pre style="font-size:.78rem"><span class="cm">// Envio.h</span>
+<span class="tag">#pragma once</span>
+<span class="tag">#include</span> <span class="st">&lt;string&gt;</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">class</span> <span class="tp">Envio</span> {
+<span class="kw">protected</span>:
+    <span class="cm">// Datos del remitente</span>
+    string nomRem, dirRem, ciudRem, estRem, cpRem;
+    <span class="cm">// Datos del destinatario</span>
+    string nomDest, dirDest, ciudDest, estDest, cpDest;
+    <span class="kw">double</span> costoEstandar;
+
+<span class="kw">public</span>:
+    <span class="fn">Envio</span>(string nR, string dR, string cR, string eR, string pR,
+          string nD, string dD, string cD, string eD, string pD,
+          <span class="kw">double</span> costo)
+        : nomRem(nR), dirRem(dR), ciudRem(cR), estRem(eR), cpRem(pR),
+          nomDest(nD), dirDest(dD), ciudDest(cD), estDest(eD), cpDest(pD),
+          costoEstandar(costo) {}
+
+    <span class="kw">virtual double</span> <span class="fn">calculaCosto</span>() <span class="kw">const</span> {
+        <span class="kw">return</span> costoEstandar;
+    }
+
+    <span class="kw">virtual</span> ~<span class="fn">Envio</span>() = <span class="kw">default</span>;
+};</pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 14 — CÓDIGO: CLASE PAQUETE
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s14">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-green" style="margin-bottom:14px">Código — Clase Derivada</div>
+    <h2>Paquete.h — Hereda de Envio</h2>
+    <pre style="font-size:.78rem"><span class="cm">// Paquete.h</span>
+<span class="tag">#pragma once</span>
+<span class="tag">#include</span> <span class="st">"Envio.h"</span>
+
+<span class="kw">class</span> <span class="tp">Paquete</span> : <span class="kw">public</span> <span class="tp">Envio</span> {
+<span class="kw">private</span>:
+    <span class="kw">double</span> largo, ancho, profundidad;
+    <span class="kw">double</span> peso;
+    <span class="kw">double</span> costoPorKg;
+
+<span class="kw">public</span>:
+    <span class="fn">Paquete</span>(string nR, string dR, string cR, string eR, string pR,
+             string nD, string dD, string cD, string eD, string pD,
+             <span class="kw">double</span> costo,
+             <span class="kw">double</span> l, <span class="kw">double</span> a, <span class="kw">double</span> prof,
+             <span class="kw">double</span> p, <span class="kw">double</span> cpk)
+        : <span class="fn">Envio</span>(nR,dR,cR,eR,pR, nD,dD,cD,eD,pD, costo),  <span class="cm">// ← llama al padre</span>
+          largo(l), ancho(a), profundidad(prof),
+          peso(p &gt; <span class="nu">0</span> ? p : <span class="nu">0</span>),
+          costoPorKg(cpk &gt; <span class="nu">0</span> ? cpk : <span class="nu">0</span>) {}
+
+    <span class="kw">double</span> <span class="fn">calculaCosto</span>() <span class="kw">const override</span> {
+        <span class="kw">return</span> <span class="tp">Envio</span>::<span class="fn">calculaCosto</span>() + peso * costoPorKg;
+    }
+};</pre>
+    <div class="highlight-box" style="margin-top:14px">
+      ⚠️ La tarea pide <strong>validar</strong> que <code>peso</code> y <code>costoPorKg</code> sean positivos — el operador ternario lo hace en una línea.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 15 — CÓDIGO: CLASE SOBRE
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s15">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-gold" style="margin-bottom:14px">Código — Clase Derivada</div>
+    <h2>Sobre.h — Hereda de Envio</h2>
+    <pre style="font-size:.78rem"><span class="cm">// Sobre.h</span>
+<span class="tag">#pragma once</span>
+<span class="tag">#include</span> <span class="st">"Envio.h"</span>
+
+<span class="kw">class</span> <span class="tp">Sobre</span> : <span class="kw">public</span> <span class="tp">Envio</span> {
+<span class="kw">private</span>:
+    <span class="kw">double</span> largo;           <span class="cm">// en centímetros</span>
+    <span class="kw">double</span> ancho;           <span class="cm">// en centímetros</span>
+    <span class="kw">double</span> cargoAdicional;  <span class="cm">// se aplica si supera 25×30 cm</span>
+
+<span class="kw">public</span>:
+    <span class="fn">Sobre</span>(string nR, string dR, string cR, string eR, string pR,
+           string nD, string dD, string cD, string eD, string pD,
+           <span class="kw">double</span> costo,
+           <span class="kw">double</span> l, <span class="kw">double</span> a, <span class="kw">double</span> cargo)
+        : <span class="fn">Envio</span>(nR,dR,cR,eR,pR, nD,dD,cD,eD,pD, costo),
+          largo(l), ancho(a), cargoAdicional(cargo) {}
+
+    <span class="kw">double</span> <span class="fn">calculaCosto</span>() <span class="kw">const override</span> {
+        <span class="kw">double</span> total = <span class="tp">Envio</span>::<span class="fn">calculaCosto</span>();
+        <span class="cm">// Cargo extra si cualquiera de las dimensiones supera el límite</span>
+        <span class="kw">if</span> (largo &gt; <span class="nu">25.0</span> || ancho &gt; <span class="nu">30.0</span>)
+            total += cargoAdicional;
+        <span class="kw">return</span> total;
+    }
+};</pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 16 — CÓDIGO: MAIN (PROGRAMA DE PRUEBA)
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s16">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-purple" style="margin-bottom:14px">Código — Prueba</div>
+    <h2>main.cpp — Programa de prueba</h2>
+    <pre style="font-size:.76rem"><span class="tag">#include</span> <span class="st">&lt;iostream&gt;</span>
+<span class="tag">#include</span> <span class="st">&lt;iomanip&gt;</span>
+<span class="tag">#include</span> <span class="st">"Envio.h"</span>
+<span class="tag">#include</span> <span class="st">"Paquete.h"</span>
+<span class="tag">#include</span> <span class="st">"Sobre.h"</span>
+<span class="kw">using namespace</span> std;
+
+<span class="kw">int</span> <span class="fn">main</span>() {
+    cout &lt;&lt; fixed &lt;&lt; setprecision(<span class="nu">2</span>);
+
+    <span class="cm">// Envío base — solo costo estándar</span>
+    <span class="tp">Envio</span> envio(<span class="st">"Ana Gómez"</span>,<span class="st">"Av.Tec 100"</span>,<span class="st">"Monterrey"</span>,<span class="st">"NL"</span>,<span class="st">"64000"</span>,
+                <span class="st">"Luis Mora"</span>,<span class="st">"Calle 5"</span>,<span class="st">"CDMX"</span>,<span class="st">"CDMX"</span>,<span class="st">"06600"</span>,  <span class="nu">50.0</span>);
+    cout &lt;&lt; <span class="st">"Envio base:  $"</span> &lt;&lt; envio.<span class="fn">calculaCosto</span>() &lt;&lt; <span class="st">"\n"</span>;
+
+    <span class="cm">// Paquete: 2 kg × $30/kg + $50 base = $110</span>
+    <span class="tp">Paquete</span> paq(<span class="st">"Ana Gómez"</span>,<span class="st">"Av.Tec 100"</span>,<span class="st">"Monterrey"</span>,<span class="st">"NL"</span>,<span class="st">"64000"</span>,
+                <span class="st">"Luis Mora"</span>,<span class="st">"Calle 5"</span>,<span class="st">"CDMX"</span>,<span class="st">"CDMX"</span>,<span class="st">"06600"</span>,  <span class="nu">50.0</span>,
+                <span class="nu">30.0</span>, <span class="nu">20.0</span>, <span class="nu">15.0</span>,  <span class="cm">// largo, ancho, prof</span>
+                <span class="nu">2.0</span>, <span class="nu">30.0</span>);          <span class="cm">// peso, costoPorKg</span>
+    cout &lt;&lt; <span class="st">"Paquete:     $"</span> &lt;&lt; paq.<span class="fn">calculaCosto</span>() &lt;&lt; <span class="st">"\n"</span>;
+
+    <span class="cm">// Sobre grande: dimensiones 30×35 → cargo adicional $20</span>
+    <span class="tp">Sobre</span> sobre(<span class="st">"Ana Gómez"</span>,<span class="st">"Av.Tec 100"</span>,<span class="st">"Monterrey"</span>,<span class="st">"NL"</span>,<span class="st">"64000"</span>,
+                <span class="st">"Luis Mora"</span>,<span class="st">"Calle 5"</span>,<span class="st">"CDMX"</span>,<span class="st">"CDMX"</span>,<span class="st">"06600"</span>,  <span class="nu">50.0</span>,
+                <span class="nu">30.0</span>, <span class="nu">35.0</span>, <span class="nu">20.0</span>);  <span class="cm">// largo, ancho, cargo</span>
+    cout &lt;&lt; <span class="st">"Sobre grande: $"</span> &lt;&lt; sobre.<span class="fn">calculaCosto</span>() &lt;&lt; <span class="st">"\n"</span>;
+}</pre>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 17 — POLIMORFISMO + HERENCIA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s17">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-purple" style="margin-bottom:14px">Bonus — Polimorfismo</div>
+    <h2>Potencia real: un arreglo de Envios</h2>
+    <pre style="font-size:.8rem"><span class="tag">#include</span> <span class="st">&lt;vector&gt;</span>
+<span class="tag">#include</span> <span class="st">&lt;memory&gt;</span>
+
+<span class="cm">// vector de punteros a la clase BASE</span>
+vector&lt;unique_ptr&lt;<span class="tp">Envio</span>&gt;&gt; envios;
+
+envios.<span class="fn">push_back</span>(make_unique&lt;<span class="tp">Envio</span>&gt;(…));
+envios.<span class="fn">push_back</span>(make_unique&lt;<span class="tp">Paquete</span>&gt;(…));
+envios.<span class="fn">push_back</span>(make_unique&lt;<span class="tp">Sobre</span>&gt;(…));
+
+<span class="cm">// El mismo loop llama la versión CORRECTA de calculaCosto()</span>
+<span class="kw">for</span> (<span class="kw">const auto</span>&amp; e : envios)
+    cout &lt;&lt; <span class="st">"Costo: $"</span> &lt;&lt; e-&gt;<span class="fn">calculaCosto</span>() &lt;&lt; <span class="st">"\n"</span>;
+<span class="cm">// ↑ Envio::calculaCosto(), Paquete::calculaCosto(), Sobre::calculaCosto()</span>
+<span class="cm">//   se resuelve en TIEMPO DE EJECUCIÓN gracias a `virtual`</span></pre>
+    <div class="highlight-box" style="margin-top:16px">
+      🚀 Así funciona internamente el SDK de FedEx/UPS: un mismo bucle procesa miles de envíos de distinto tipo sin un solo <code>if/switch</code>.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 18 — ERRORES COMUNES
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s18">
+  <div style="max-width:900px;width:100%">
+    <div class="badge badge-red" style="margin-bottom:14px">Errores comunes</div>
+    <h2>Trampas que debes evitar</h2>
+    <div class="grid-2">
+      <div>
+        <div class="card" style="border-color:var(--accent2);margin-bottom:14px">
+          <p style="color:var(--accent2);font-weight:700">❌ Olvidar llamar al constructor base</p>
+          <pre style="font-size:.75rem"><span class="tp">Paquete</span>::<span class="fn">Paquete</span>(…)
+    <span class="cm">// sin : Envio(…) → costoEstandar queda basura</span>
+    : peso(p) {}</pre>
+        </div>
+        <div class="card" style="border-color:var(--accent2);margin-bottom:14px">
+          <p style="color:var(--accent2);font-weight:700">❌ Sin destructor virtual en la base</p>
+          <pre style="font-size:.75rem"><span class="cm">// Si Envio no tiene ~Envio() virtual</span>
+<span class="cm">// y usas punteros base → memory leak</span>
+<span class="tp">Envio</span>* e = <span class="kw">new</span> <span class="tp">Paquete</span>(…);
+<span class="kw">delete</span> e; <span class="cm">// ← destructor incorrecto</span></pre>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="border-color:var(--accent4);margin-bottom:14px">
+          <p style="color:var(--accent4);font-weight:700">⚠️ Olvidar <code>override</code></p>
+          <pre style="font-size:.75rem"><span class="cm">// Sin override: si cambias la firma</span>
+<span class="cm">// en la base, el compilador NO avisa</span>
+<span class="kw">double</span> <span class="fn">calculaCosto</span>() { … }  <span class="cm">// peligroso</span>
+<span class="kw">double</span> <span class="fn">calculaCosto</span>() <span class="kw">override</span> { … } <span class="cm">// seguro</span></pre>
+        </div>
+        <div class="card" style="border-color:var(--accent4)">
+          <p style="color:var(--accent4);font-weight:700">⚠️ Atributos privados no accesibles</p>
+          <pre style="font-size:.75rem"><span class="cm">// Si costoEstandar es private</span>
+<span class="cm">// Paquete no puede leerlo</span>
+<span class="cm">// → usa protected o getter</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 19 — CHECKLIST DE LA TAREA
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s19">
+  <div style="max-width:860px;width:100%">
+    <div class="badge badge-gold" style="margin-bottom:14px">Checklist</div>
+    <h2>Lista de verificación antes de entregar</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="color:var(--accent)">Clase <code>Envio</code></h3>
+        <ul style="list-style:none;line-height:2.2;color:var(--muted);font-size:.9rem">
+          <li>☐ Datos remitente (nombre, dir, ciudad, estado, CP)</li>
+          <li>☐ Datos destinatario (igual)</li>
+          <li>☐ <code>costoEstandar</code> como miembro <code>protected</code></li>
+          <li>☐ Constructor inicializa todo</li>
+          <li>☐ <code>virtual double calculaCosto()</code></li>
+          <li>☐ Destructor virtual</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <h3 style="color:var(--accent3)">Clase <code>Paquete</code></h3>
+          <ul style="list-style:none;line-height:2;color:var(--muted);font-size:.9rem">
+            <li>☐ Hereda de <code>Envio</code> con <code>public</code></li>
+            <li>☐ largo, ancho, profundidad, peso, costoPorKg</li>
+            <li>☐ Validación peso > 0 y costoPorKg > 0</li>
+            <li>☐ <code>calculaCosto() override</code> = base + peso×$/kg</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="color:var(--accent4)">Clase <code>Sobre</code></h3>
+          <ul style="list-style:none;line-height:2;color:var(--muted);font-size:.9rem">
+            <li>☐ Hereda de <code>Envio</code> con <code>public</code></li>
+            <li>☐ largo, ancho, cargoAdicional</li>
+            <li>☐ <code>calculaCosto()</code> verifica >25 o >30 cm</li>
+            <li>☐ <code>main.cpp</code> prueba las 3 clases</li>
+            <li>☐ Archivos en .ZIP para Canvas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 20 — RESUMEN
+═══════════════════════════════════════════════════════════════ -->
+<div class="slide" id="s20">
+  <div style="max-width:860px;width:100%;text-align:center">
+    <div class="badge badge-green" style="margin-bottom:20px">Resumen</div>
+    <h2 style="margin-bottom:28px">Lo que aprendiste hoy</h2>
+    <div class="grid-3" style="text-align:left;margin-bottom:28px">
+      <div class="card" style="border-color:var(--accent);text-align:center">
+        <div style="font-size:2.5rem">♻️</div>
+        <p style="color:var(--accent);font-weight:700;margin:8px 0">Reutilización</div>
+        <p style="color:var(--muted);font-size:.85rem">Escribe código una vez en la base; todos los hijos lo heredan.</p>
+      </div>
+      <div class="card" style="border-color:var(--accent3);text-align:center">
+        <div style="font-size:2.5rem">🔧</div>
+        <p style="color:var(--accent3);font-weight:700;margin:8px 0">Especialización</p>
+        <p style="color:var(--muted);font-size:.85rem">Cada clase hija sobreescribe solo lo que necesita cambiar.</p>
+      </div>
+      <div class="card" style="border-color:var(--purple);text-align:center">
+        <div style="font-size:2.5rem">🔀</div>
+        <p style="color:var(--purple);font-weight:700;margin:8px 0">Polimorfismo</p>
+        <p style="color:var(--muted);font-size:.85rem">Un puntero base llama el método correcto en runtime.</p>
+      </div>
+    </div>
+    <div class="highlight-box" style="text-align:left">
+      🏆 <strong>La regla de oro:</strong> si puedes decir "<em>X es un Y</em>" en lenguaje natural, entonces tiene sentido que X herede de Y en código. Un <code>Paquete</code> <em>es un</em> <code>Envio</code> ✔
+    </div>
+    <p style="color:var(--muted);margin-top:24px;font-size:.9rem">¿Preguntas? → TC1030 · Capítulo 11 Deitel · geeksforgeeks.org/cpp/inheritance-in-c/</p>
+  </div>
+</div>
+
+</div><!-- end deck -->
+
+<!-- ── NAVIGATION ── -->
+<nav class="nav">
+  <button id="btnPrev" onclick="go(-1)" disabled>← Anterior</button>
+  <span id="counter">1 / 20</span>
+  <button id="btnNext" onclick="go(1)">Siguiente →</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let   cur    = 0;
+
+  function go(dir) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(total - 1, cur + dir));
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = `${cur + 1} / ${total}`;
+    document.getElementById('btnPrev').disabled = cur === 0;
+    document.getElementById('btnNext').disabled = cur === total - 1;
+    document.getElementById('progress').style.width = `${((cur + 1) / total) * 100}%`;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown')  go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')    go(-1);
+  });
+
+  // init progress
+  document.getElementById('progress').style.width = `${(1 / total) * 100}%`;
+</script>
+</body>
+</html>
