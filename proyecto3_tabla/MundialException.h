@@ -37,4 +37,10 @@ public:
         : MundialException("El equipo ya existe en el grupo: " + equipo) {}
 };
 
+class PartidoDuplicadoException : public MundialException {
+public:
+    PartidoDuplicadoException(const string& local, const string& visitante)
+        : MundialException("Partido duplicado: " + local + " vs " + visitante + " ya fue registrado") {}
+};
+
 #endif
